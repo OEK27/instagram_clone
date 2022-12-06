@@ -4,9 +4,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:instagram_clone/resources/auth_methods.dart';
+import 'package:instagram_clone/screens/login_screen.dart';
 import 'package:instagram_clone/utils/colors.dart';
 import 'package:instagram_clone/widgets/text_field_input.dart';
 
+import '../responsive/mobile_screen_layout.dart';
+import '../responsive/responsive_layout_screen.dart';
+import '../responsive/web_screen_layout.dart';
 import '../utils/utils.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -22,6 +26,8 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _bioController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   Uint8List? _image;
+  bool _isLoading = false;
+
   @override
   void dispose() {
     super.dispose();
@@ -39,6 +45,10 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   void signUpUser() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     String res = await AuthMethods().signUpUser(
       email: _emailController.text,
       password: _passwordController.text,
@@ -46,10 +56,26 @@ class _SignupScreenState extends State<SignupScreen> {
       bio: _bioController.text,
       file: _image!,
     );
+
+    setState(() {
+      _isLoading = false;
+    });
     if (res != 'success') {
       // ignore: use_build_context_synchronously
       showSnackBar(res, context);
-    } else {}
+    } else {
+      // ignore: use_build_context_synchronously
+      Navigator.of(context).pushReplacement(MaterialPageRoute(
+          builder: (context) => const ResponsiveLayout(
+                mobileScreenLayout: MobileScreenLayout(),
+                webScreenLayout: WebScreenLayout(),
+              )));
+    }
+  }
+
+  void navigateToLogin() {
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (context) => const LoginScreen()));
   }
 
   @override
@@ -91,7 +117,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           icon: const Icon(Icons.add_a_photo)))
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 20),
               // text field input for username
               TextFieldInput(
                   textEditingController: _usernameController,
@@ -103,7 +129,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   textEditingController: _emailController,
                   hintText: "Enter your email",
                   textInputType: TextInputType.emailAddress),
-              const SizedBox(height: 10),
+              const SizedBox(height: 20),
               // text field input for password
               TextFieldInput(
                 textEditingController: _passwordController,
@@ -130,10 +156,37 @@ class _SignupScreenState extends State<SignupScreen> {
                         borderRadius: BorderRadius.all(Radius.circular(4))),
                     color: blueColor,
                   ),
-                  child: const Text("Sign up"),
+                  child: _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: primaryColor,
+                          ),
+                        )
+                      : const Text("Sign up"),
                 ),
               ),
               const SizedBox(height: 20),
+              Flexible(flex: 2, child: Container()),
+              // transioting to login
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: const Text("Dont have an account?"),
+                  ),
+                  GestureDetector(
+                    onTap: navigateToLogin,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: const Text(
+                        "Login",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              )
             ],
           ),
         ),
