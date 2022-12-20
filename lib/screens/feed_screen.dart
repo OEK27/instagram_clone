@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:instagram_clone/models/post.dart';
 import 'package:instagram_clone/utils/colors.dart';
 
 import '../widgets/post_card.dart';
