@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:instagram_clone/resources/firestore_methods.dart';
 import 'package:instagram_clone/utils/colors.dart';
 import 'package:instagram_clone/utils/utils.dart';
 import 'package:provider/provider.dart';
@@ -17,14 +18,40 @@ class AddPostSCreen extends StatefulWidget {
 
 class _AddPostSCreenState extends State<AddPostSCreen> {
   Uint8List? _file;
+  final TextEditingController _descriptionController = TextEditingController();
+  bool _isLoading = false;
 
-  _selectImage(BuildContext conetxt) async {
+  void postImage(String uid, String username, String profileImage) async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      String res = await FireStoreMethods().uploadPost(
+          _descriptionController.text, _file!, uid, username, profileImage);
+      if (res == "succes") {
+        setState(() {
+          _isLoading = false;
+        });
+        showSnackBar('Posted!', context);
+        clearImage();
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+        showSnackBar(res, context);
+      }
+    } catch (err) {
+      showSnackBar(err.toString(), context);
+    }
+  }
+
+  _selectImage(BuildContext parentContext) async {
     return showDialog(
-        context: context,
-        builder: (conetxt) {
+        context: parentContext,
+        builder: (BuildContext context) {
           return SimpleDialog(
             title: const Text('Create a post'),
-            children: [
+            children: <Widget>[
               SimpleDialogOption(
                 padding: const EdgeInsets.all(20),
                 child: const Text('Take a photo'),
@@ -52,9 +79,28 @@ class _AddPostSCreenState extends State<AddPostSCreen> {
                   });
                 },
               ),
+              SimpleDialogOption(
+                padding: const EdgeInsets.all(20),
+                child: const Text('Cancel'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
             ],
           );
         });
+  }
+
+  void clearImage() {
+    setState(() {
+      _file = null;
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _descriptionController.dispose();
   }
 
   @override
@@ -77,9 +123,10 @@ class _AddPostSCreenState extends State<AddPostSCreen> {
               ),
               title: const Text('Post to'),
               centerTitle: false,
-              actions: [
+              actions: <Widget>[
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () =>
+                      postImage(user.uid, user.username, user.photoUrl),
                   child: const Text(
                     'Post',
                     style: TextStyle(
@@ -91,11 +138,15 @@ class _AddPostSCreenState extends State<AddPostSCreen> {
               ],
             ),
             body: Column(
-              children: [
+              children: <Widget>[
+                _isLoading
+                    ? const LinearProgressIndicator()
+                    : const Padding(padding: EdgeInsets.only(top: 0.0)),
+                const Divider(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                  children: <Widget>[
                     CircleAvatar(
                         backgroundImage: NetworkImage(
                       user.photoUrl,
@@ -103,7 +154,8 @@ class _AddPostSCreenState extends State<AddPostSCreen> {
                     SizedBox(
                       width: MediaQuery.of(context).size.width * 0.4,
                       child: TextField(
-                        decoration: InputDecoration(
+                        controller: _descriptionController,
+                        decoration: const InputDecoration(
                             hintText: 'Write a caption...',
                             border: InputBorder.none),
                         maxLines: 8,
@@ -115,10 +167,10 @@ class _AddPostSCreenState extends State<AddPostSCreen> {
                       child: AspectRatio(
                         aspectRatio: 487 / 451,
                         child: Container(
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                               image: DecorationImage(
                             image: NetworkImage(
-                                'https://plus.unsplash.com/premium_photo-1664451177614-1c3c16ed0d4c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxlZGl0b3JpYWwtZmVlZHw3fHx8ZW58MHx8fHw%3D&auto=format&fit=crop&w=400&q=60'),
+                                'https://images.unsplash.com/photo-1671114953762-0a272312e9b0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxlZGl0b3JpYWwtZmVlZHwzfHx8ZW58MHx8fHw%3D&auto=format&fit=crop&w=500&q=60'),
                             fit: BoxFit.fill,
                             alignment: FractionalOffset.topCenter,
                           )),
